@@ -39,7 +39,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="ticket in tickets" :key="ticket.id">
+        <tr v-for="ticket in tickets" :key="ticket.id" @click="openDetail(ticket.id)" style="cursor:pointer;">
           <td>{{ ticket.subject }}</td>
           <td>{{ ticket.status }}</td>
           <td>{{ ticket.category || '-' }}</td>
@@ -52,12 +52,19 @@
       <span>Page {{ page }}</span>
       <button @click="nextPage" :disabled="!hasMore">Next</button>
     </div>
+    <div v-if="showDetail" class="ticket-list__modal">
+      <div class="ticket-list__modal-content">
+        <TicketDetail :id="selectedId" @close="closeDetail" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+import TicketDetail from './TicketDetail.vue';
 export default {
   name: 'TicketList',
+  components: { TicketDetail },
   data() {
     return {
       tickets: [],
@@ -71,6 +78,8 @@ export default {
       newSubject: '',
       newBody: '',
       error: '',
+      showDetail: false,
+      selectedId: null,
     };
   },
   watch: {
@@ -128,6 +137,14 @@ export default {
     closeModal() {
       this.showModal = false;
       this.error = '';
+    },
+    openDetail(id) {
+      this.selectedId = id;
+      this.showDetail = true;
+    },
+    closeDetail() {
+      this.showDetail = false;
+      this.selectedId = null;
     },
   },
 };
