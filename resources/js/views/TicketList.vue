@@ -2,7 +2,12 @@
   <div class="ticket-list">
     <header class="ticket-list__header">
       <h1 class="ticket-list__title">Tickets</h1>
-      <button class="ticket-list__new-btn" @click="showModal = true">+ New Ticket</button>
+      <div>
+        <button class="ticket-list__new-btn" @click="showModal = true">+ New Ticket</button>
+        <button class="ticket-list__theme-btn" @click="toggleTheme">
+          {{ darkTheme ? 'Light Mode' : 'Dark Mode' }}
+        </button>
+      </div>
     </header>
     <div v-if="showModal" class="ticket-list__modal">
       <div class="ticket-list__modal-content">
@@ -95,6 +100,7 @@ export default {
       selectedId: null,
       subjectError: '',
       bodyError: '',
+      darkTheme: false,
     };
   },
   watch: {
@@ -178,6 +184,10 @@ export default {
       } else {
         this.bodyError = '';
       }
+    },
+    toggleTheme() {
+      this.darkTheme = !this.darkTheme;
+      document.body.classList.toggle('theme-dark', this.darkTheme);
     },
   },
 };
@@ -317,5 +327,54 @@ export default {
   color: #d32f2f;
   font-size: 0.98em;
   margin-bottom: 0.5em;
+}
+.theme-dark {
+  background: #181a1b !important;
+  color: #e0e0e0 !important;
+}
+.theme-dark .ticket-list {
+  background: #23272b;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__header {
+  background: #23272b;
+}
+.theme-dark .ticket-list__table th {
+  background: #23272b;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__table td {
+  background: #23272b;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__modal-content {
+  background: #23272b;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__input,
+.theme-dark .ticket-list__textarea,
+.theme-dark .ticket-list__filter,
+.theme-dark .ticket-list__search {
+  background: #181a1b;
+  color: #e0e0e0;
+  border-color: #444;
+}
+.theme-dark .ticket-list__new-btn,
+.theme-dark .ticket-list__theme-btn {
+  background: #444;
+  color: #e0e0e0;
+}
+.ticket-list__theme-btn {
+  margin-left: 1em;
+  padding: 0.5em 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #e0e0e0;
+  color: #23272b;
+}
+.ticket-list__theme-btn:hover {
+  background: #bdbdbd;
 }
 </style>
