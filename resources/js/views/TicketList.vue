@@ -8,10 +8,12 @@
       <div class="ticket-list__modal-content">
         <h2>Submit New Ticket</h2>
         <form @submit.prevent="submitTicket">
-          <input v-model="newSubject" placeholder="Subject" required class="ticket-list__input" />
-          <textarea v-model="newBody" placeholder="Body" required class="ticket-list__textarea"></textarea>
+          <input v-model="newSubject" placeholder="Subject" required class="ticket-list__input" @input="validateSubject" />
+          <div v-if="subjectError" class="ticket-list__validation">{{ subjectError }}</div>
+          <textarea v-model="newBody" placeholder="Body" required class="ticket-list__textarea" @input="validateBody"></textarea>
+          <div v-if="bodyError" class="ticket-list__validation">{{ bodyError }}</div>
           <div class="ticket-list__modal-actions">
-            <button type="submit">Submit</button>
+            <button type="submit" :disabled="subjectError || bodyError">Submit</button>
             <button type="button" @click="closeModal">Cancel</button>
           </div>
         </form>
@@ -91,6 +93,8 @@ export default {
       error: '',
       showDetail: false,
       selectedId: null,
+      subjectError: '',
+      bodyError: '',
     };
   },
   watch: {
@@ -156,6 +160,24 @@ export default {
     closeDetail() {
       this.showDetail = false;
       this.selectedId = null;
+    },
+    validateSubject() {
+      if (!this.newSubject.trim()) {
+        this.subjectError = 'Subject is required.';
+      } else if (this.newSubject.length < 5) {
+        this.subjectError = 'Subject must be at least 5 characters.';
+      } else {
+        this.subjectError = '';
+      }
+    },
+    validateBody() {
+      if (!this.newBody.trim()) {
+        this.bodyError = 'Body is required.';
+      } else if (this.newBody.length < 10) {
+        this.bodyError = 'Body must be at least 10 characters.';
+      } else {
+        this.bodyError = '';
+      }
     },
   },
 };
@@ -290,5 +312,10 @@ export default {
 .ticket-list__confidence {
   display: inline-flex;
   align-items: center;
+}
+.ticket-list__validation {
+  color: #d32f2f;
+  font-size: 0.98em;
+  margin-bottom: 0.5em;
 }
 </style>
