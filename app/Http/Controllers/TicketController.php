@@ -71,7 +71,7 @@ class TicketController extends Controller
     // POST /tickets/{id}/classify
     public function classify(string $id)
     {
-        // Placeholder: dispatch AI job here
+        \App\Jobs\ClassifyTicket::dispatch($id);
         return response()->json(['message' => 'Classification job dispatched.']);
     }
 
