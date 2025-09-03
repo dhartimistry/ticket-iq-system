@@ -1,6 +1,21 @@
 <template>
   <div class="ticket-list">
     <h1>Tickets</h1>
+    <button class="ticket-list__new-btn" @click="showModal = true">New Ticket</button>
+    <div v-if="showModal" class="ticket-list__modal">
+      <div class="ticket-list__modal-content">
+        <h2>Submit New Ticket</h2>
+        <form @submit.prevent="submitTicket">
+          <input v-model="newSubject" placeholder="Subject" required class="ticket-list__input" />
+          <textarea v-model="newBody" placeholder="Body" required class="ticket-list__textarea"></textarea>
+          <div class="ticket-list__modal-actions">
+            <button type="submit">Submit</button>
+            <button type="button" @click="closeModal">Cancel</button>
+          </div>
+        </form>
+        <div v-if="error" class="ticket-list__error">{{ error }}</div>
+      </div>
+    </div>
     <div class="ticket-list__controls">
       <input v-model="search" placeholder="Search..." class="ticket-list__search" />
       <select v-model="status" class="ticket-list__filter">
@@ -52,6 +67,10 @@ export default {
       categories: ['billing', 'technical', 'general', 'account', 'other'],
       page: 1,
       hasMore: false,
+      showModal: false,
+      newSubject: '',
+      newBody: '',
+      error: '',
     };
   },
   watch: {
@@ -84,6 +103,32 @@ export default {
     prevPage() {
       if (this.page > 1) this.page--;
     },
+    submitTicket() {
+      this.error = '';
+      fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: this.newSubject, body: this.newBody }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.id) {
+            this.closeModal();
+            this.newSubject = '';
+            this.newBody = '';
+            this.fetchTickets();
+          } else {
+            this.error = data.message || 'Error creating ticket.';
+          }
+        })
+        .catch(() => {
+          this.error = 'Error creating ticket.';
+        });
+    },
+    closeModal() {
+      this.showModal = false;
+      this.error = '';
+    },
   },
 };
 </script>
@@ -114,5 +159,39 @@ export default {
 .ticket-list__table th, .ticket-list__table td {
   border: 1px solid #ccc;
   padding: 8px;
+}
+.ticket-list__new-btn {
+  margin-bottom: 1em;
+  padding: 0.5em 1em;
+  font-weight: bold;
+}
+.ticket-list__modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.ticket-list__modal-content {
+  background: #fff;
+  padding: 2em;
+  border-radius: 8px;
+  min-width: 300px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.ticket-list__input, .ticket-list__textarea {
+  width: 100%;
+  margin-bottom: 1em;
+  padding: 0.5em;
+}
+.ticket-list__modal-actions {
+  display: flex;
+  gap: 1em;
+}
+.ticket-list__error {
+  color: red;
+  margin-top: 1em;
 }
 </style>
