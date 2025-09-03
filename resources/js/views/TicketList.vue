@@ -7,6 +7,7 @@
         <button class="ticket-list__theme-btn" @click="toggleTheme">
           {{ darkTheme ? 'Light Mode' : 'Dark Mode' }}
         </button>
+        <button class="ticket-list__csv-btn" @click="exportCSV">Export CSV</button>
       </div>
     </header>
     <div v-if="showModal" class="ticket-list__modal">
@@ -188,6 +189,24 @@ export default {
     toggleTheme() {
       this.darkTheme = !this.darkTheme;
       document.body.classList.toggle('theme-dark', this.darkTheme);
+    },
+    exportCSV() {
+      const headers = ['Subject', 'Status', 'Category', 'Confidence'];
+      const rows = this.tickets.map(t => [
+        '"' + (t.subject || '') + '"',
+        t.status || '',
+        t.category || '',
+        t.confidence !== null ? t.confidence : ''
+      ]);
+      let csv = headers.join(',') + '\n';
+      csv += rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'tickets.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     },
   },
 };
@@ -376,5 +395,22 @@ export default {
 }
 .ticket-list__theme-btn:hover {
   background: #bdbdbd;
+}
+.ticket-list__csv-btn {
+  margin-left: 1em;
+  padding: 0.5em 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #4caf50;
+  color: #fff;
+}
+.ticket-list__csv-btn:hover {
+  background: #388e3c;
+}
+.theme-dark .ticket-list__csv-btn {
+  background: #388e3c;
+  color: #e0e0e0;
 }
 </style>
