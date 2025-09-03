@@ -15,6 +15,10 @@
       <label>Category</label>
       <input v-model="form.category" class="ticket-detail__input" />
       <button type="button" @click="overrideCategory">Override AI Category</button>
+      <button type="button" @click="classifyTicket" :disabled="classifying" style="margin-left:1em;">
+        <span v-if="classifying">Classifying...</span>
+        <span v-else>Classify</span>
+      </button>
       <label>Internal Note</label>
       <textarea v-model="form.internal_note" class="ticket-detail__textarea"></textarea>
       <div class="ticket-detail__actions">
@@ -41,6 +45,7 @@ export default {
         internal_note: '',
       },
       error: '',
+      classifying: false,
     };
   },
   mounted() {
@@ -83,6 +88,21 @@ export default {
     overrideCategory() {
       // Logic to override AI category (could call /classify or allow manual edit)
       this.form.category = prompt('Enter new category:', this.form.category) || this.form.category;
+    },
+    classifyTicket() {
+      this.classifying = true;
+      fetch(`/api/tickets/${this.id}/classify`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          this.form.category = data.category;
+          if ('confidence' in data) this.ticket.confidence = data.confidence;
+          this.classifying = false;
+          this.error = '';
+        })
+        .catch(() => {
+          this.error = 'Failed to classify ticket.';
+          this.classifying = false;
+        });
     },
   },
 };
