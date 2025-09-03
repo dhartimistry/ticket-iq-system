@@ -44,8 +44,17 @@
         <tr v-for="ticket in tickets" :key="ticket.id" @click="openDetail(ticket.id)" style="cursor:pointer;">
           <td>{{ ticket.subject }}</td>
           <td>{{ ticket.status }}</td>
-          <td>{{ ticket.category || '-' }}</td>
-          <td>{{ ticket.confidence !== null ? ticket.confidence : '-' }}</td>
+          <td>
+            {{ ticket.category || '-' }}
+            <span v-if="ticket.note" class="ticket-list__badge" title="Internal note present">📝</span>
+          </td>
+          <td>
+            <span v-if="ticket.confidence !== null" class="ticket-list__confidence">
+              {{ ticket.confidence }}
+              <span v-if="ticket.explanation" class="ticket-list__info" :title="ticket.explanation">ℹ️</span>
+            </span>
+            <span v-else>-</span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -263,5 +272,23 @@ export default {
 }
 .ticket-list__table tr:hover {
   background-color: #f1f1f1;
+}
+.ticket-list__badge {
+  display: inline-block;
+  background: #ffe066;
+  color: #333;
+  font-size: 0.9em;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+.ticket-list__info {
+  margin-left: 6px;
+  cursor: pointer;
+  color: #007bff;
+}
+.ticket-list__confidence {
+  display: inline-flex;
+  align-items: center;
 }
 </style>
