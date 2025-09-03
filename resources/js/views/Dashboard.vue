@@ -17,13 +17,13 @@
     </div>
     <div class="dashboard__chart">
       <h2>Tickets by Category</h2>
-      <!-- Chart.js chart will go here -->
       <canvas id="categoryChart"></canvas>
     </div>
   </div>
 </template>
 
 <script>
+import Chart from '../chart';
 export default {
   name: 'Dashboard',
   data() {
@@ -31,6 +31,7 @@ export default {
       statusCounts: {},
       categoryCounts: {},
       total: 0,
+      chart: null,
     };
   },
   mounted() {
@@ -40,8 +41,31 @@ export default {
         this.statusCounts = data.status || {};
         this.categoryCounts = data.category || {};
         this.total = data.total || 0;
-        // Chart.js integration can be added here
+        this.renderChart();
       });
+  },
+  methods: {
+    renderChart() {
+      if (this.chart) this.chart.destroy();
+      const ctx = document.getElementById('categoryChart');
+      this.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(this.categoryCounts),
+          datasets: [{
+            label: 'Tickets by Category',
+            data: Object.values(this.categoryCounts),
+            backgroundColor: '#42a5f5',
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+          },
+        },
+      });
+    },
   },
 };
 </script>
