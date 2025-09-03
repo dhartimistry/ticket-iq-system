@@ -1,6 +1,8 @@
 <template>
   <div class="dashboard">
-    <h1>Dashboard</h1>
+    <header class="dashboard__header">
+      <h1>Helpdesk Dashboard</h1>
+    </header>
     <div class="dashboard__stats">
       <div class="dashboard__card" v-for="(count, status) in statusCounts" :key="status">
         <strong>{{ status }}</strong>
@@ -55,13 +57,22 @@ export default {
           datasets: [{
             label: 'Tickets by Category',
             data: Object.values(this.categoryCounts),
-            backgroundColor: '#42a5f5',
+            backgroundColor: [
+              '#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#ec407a', '#26a69a', '#ff7043', '#8d6e63'
+            ],
+            borderRadius: 6,
+            barPercentage: 0.6,
           }],
         },
         options: {
           responsive: true,
           plugins: {
             legend: { display: false },
+            tooltip: { enabled: true },
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#e0e0e0' }, beginAtZero: true },
           },
         },
       });
@@ -71,25 +82,65 @@ export default {
 </script>
 
 <style>
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2em 1em;
+  background: #f9fbfd;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(60,80,120,0.08);
+}
+.dashboard__header {
+  text-align: center;
+  margin-bottom: 2em;
+}
+.dashboard__header h1 {
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #263238;
+  letter-spacing: 1px;
+}
 .dashboard__stats {
   display: flex;
   gap: 2em;
   margin-bottom: 2em;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .dashboard__card {
-  background: #f5f5f5;
-  padding: 1em 2em;
-  border-radius: 8px;
-  min-width: 120px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #fff 100%);
+  padding: 1.2em 2em;
+  border-radius: 12px;
+  min-width: 140px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 12px rgba(33,150,243,0.07);
+  transition: box-shadow 0.2s;
+  font-size: 1.1em;
+}
+.dashboard__card:hover {
+  box-shadow: 0 4px 24px rgba(33,150,243,0.15);
 }
 .dashboard__card--total {
-  background: #e0f7fa;
+  background: linear-gradient(135deg, #e0f7fa 0%, #fff 100%);
   font-weight: bold;
+  border: 2px solid #26a69a;
 }
 .dashboard__chart {
   margin-top: 2em;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(33,150,243,0.07);
+  padding: 2em;
+}
+@media (max-width: 700px) {
+  .dashboard {
+    padding: 1em 0.5em;
+  }
+  .dashboard__stats {
+    gap: 1em;
+  }
+  .dashboard__chart {
+    padding: 1em;
+  }
 }
 </style>

@@ -110,28 +110,49 @@ export default {
 
 <style>
 .ticket-detail {
-  background: #fff;
+  background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%);
   padding: 2em;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(60,80,120,0.10);
   max-width: 500px;
   margin: 2em auto;
+  font-size: 1.08em;
 }
 .ticket-detail__input,
 .ticket-detail__textarea,
 .ticket-detail__select {
   width: 100%;
   margin-bottom: 1em;
-  padding: 0.5em;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 0.7em;
+  border-radius: 6px;
+  border: 1px solid #b0bec5;
+  font-size: 1em;
+  background: #f5faff;
+}
+.ticket-detail__input:focus,
+.ticket-detail__textarea:focus,
+.ticket-detail__select:focus {
+  border-color: #42a5f5;
+  outline: none;
 }
 .ticket-detail__actions {
   display: flex;
   gap: 1em;
+  justify-content: flex-end;
 }
 .ticket-detail__error {
   color: #d32f2f;
   margin-top: 1em;
+  font-weight: 500;
+}
+.ticket-detail__input,
+.ticket-detail__textarea {
+  box-shadow: 0 1px 4px rgba(33,150,243,0.07);
+}
+@media (max-width: 600px) {
+  .ticket-detail {
+    padding: 1em;
+    font-size: 1em;
+  }
 }
 </style>

@@ -1,7 +1,9 @@
 <template>
   <div class="ticket-list">
-    <h1>Tickets</h1>
-    <button class="ticket-list__new-btn" @click="showModal = true">New Ticket</button>
+    <header class="ticket-list__header">
+      <h1 class="ticket-list__title">Tickets</h1>
+      <button class="ticket-list__new-btn" @click="showModal = true">+ New Ticket</button>
+    </header>
     <div v-if="showModal" class="ticket-list__modal">
       <div class="ticket-list__modal-content">
         <h2>Submit New Ticket</h2>
@@ -151,41 +153,44 @@ export default {
 </script>
 
 <style>
-.ticket-list__controls {
-  margin-bottom: 1em;
+.ticket-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1em;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.ticket-list__header {
   display: flex;
-  gap: 1em;
-}
-.ticket-list__search {
-  flex: 1;
-  padding: 0.5em;
-}
-.ticket-list__filter {
-  padding: 0.5em;
-}
-.ticket-list__pagination {
-  margin-top: 1em;
-  display: flex;
-  gap: 1em;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 1.5em;
 }
-.ticket-list__table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.ticket-list__table th, .ticket-list__table td {
-  border: 1px solid #ccc;
-  padding: 8px;
+.ticket-list__title {
+  font-size: 2.4em;
+  font-weight: 900;
+  color: #007bff;
+  text-shadow: 0 2px 8px rgba(0,123,255,0.12);
+  letter-spacing: 1px;
+  margin: 0;
 }
 .ticket-list__new-btn {
-  margin-bottom: 1em;
-  padding: 0.5em 1em;
+  padding: 0.5em 1.5em;
   font-weight: bold;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ticket-list__new-btn:hover {
+  background-color: #0056b3;
 }
 .ticket-list__modal {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,13 +200,21 @@ export default {
   background: #fff;
   padding: 2em;
   border-radius: 8px;
-  min-width: 300px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  min-width: 320px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 .ticket-list__input, .ticket-list__textarea {
   width: 100%;
   margin-bottom: 1em;
-  padding: 0.5em;
+  padding: 0.75em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.ticket-list__input:focus, .ticket-list__textarea:focus {
+  border-color: #007bff;
+  outline: none;
 }
 .ticket-list__modal-actions {
   display: flex;
@@ -210,5 +223,45 @@ export default {
 .ticket-list__error {
   color: red;
   margin-top: 1em;
+}
+.ticket-list__controls {
+  margin-bottom: 1.5em;
+  display: flex;
+  gap: 1em;
+  flex-wrap: wrap;
+}
+.ticket-list__search {
+  flex: 1;
+  padding: 0.75em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.ticket-list__filter {
+  padding: 0.75em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.ticket-list__pagination {
+  margin-top: 1.5em;
+  display: flex;
+  gap: 1em;
+  align-items: center;
+}
+.ticket-list__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5em;
+}
+.ticket-list__table th, .ticket-list__table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+.ticket-list__table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+.ticket-list__table tr:hover {
+  background-color: #f1f1f1;
 }
 </style>
