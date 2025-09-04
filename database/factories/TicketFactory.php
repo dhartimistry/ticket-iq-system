@@ -13,12 +13,13 @@ class TicketFactory extends Factory
 {
     protected $model = Ticket::class;
 
-    public function definition(): array
+   public function definition(): array
     {
+        $this->faker->locale = 'en_US'; // Force English locale on built-in faker
         $categories = ['billing', 'technical', 'general', 'account', 'other'];
         return [
             'id' => (string) Str::ulid(),
-            'subject' => $this->faker->sentence(),
+            'subject' => $this->faker->sentence(6, true),
             'body' => $this->faker->paragraphs(2, true),
             'status' => $this->faker->randomElement(['open', 'pending', 'closed']),
             'category' => $this->faker->randomElement($categories),

@@ -1,6 +1,7 @@
 <template>
-  <div class="dashboard">
+  <div :class="['dashboard', { 'dashboard--dark': isDarkMode }]">
     <header class="dashboard__header">
+      <router-link to="/tickets" class="dashboard__btn dashboard__btn--back">← Back to Tickets</router-link>
       <h1>Helpdesk Dashboard</h1>
     </header>
     <div class="dashboard__stats">
@@ -17,7 +18,7 @@
         <div>{{ total }}</div>
       </div>
     </div>
-    <div class="dashboard__chart">
+    <div :class="['dashboard__chart', { 'dashboard__chart--dark': isDarkMode }]">
       <h2>Tickets by Category</h2>
       <canvas id="categoryChart"></canvas>
     </div>
@@ -36,6 +37,11 @@ export default {
       chart: null,
     };
   },
+  computed: {
+    isDarkMode() {
+      return document.documentElement.classList.contains('theme-dark');
+    }
+  },
   mounted() {
     fetch('/api/stats')
       .then(res => res.json())
@@ -50,30 +56,58 @@ export default {
     renderChart() {
       if (this.chart) this.chart.destroy();
       const ctx = document.getElementById('categoryChart');
+      
+      // Ensure we have proper labels for all categories, including uncategorized
+      const labels = Object.keys(this.categoryCounts);
+      const data = Object.values(this.categoryCounts);
+      
+      // Generate colors with specific color for Uncategorized
+      const defaultColors = ['#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#ec407a', '#26a69a', '#ff7043', '#8d6e63'];
+      const backgroundColor = labels.map((label, index) => {
+        return label === 'Uncategorized' ? '#ee9b00' : defaultColors[index % defaultColors.length];
+      });
+      
       this.chart = new Chart(ctx, {
-        type: 'bar',
+        type: 'pie',
         data: {
-          labels: Object.keys(this.categoryCounts),
+          labels: labels,
           datasets: [{
             label: 'Tickets by Category',
-            data: Object.values(this.categoryCounts),
-            backgroundColor: [
-              '#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#ec407a', '#26a69a', '#ff7043', '#8d6e63'
-            ],
-            borderRadius: 6,
-            barPercentage: 0.6,
+            data: data,
+            backgroundColor: backgroundColor,
+            borderWidth: 2,
+            borderColor: this.isDarkMode ? '#2c2f33' : '#fff',
           }],
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { display: false },
-            tooltip: { enabled: true },
+            legend: { 
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: this.isDarkMode ? '#e0e0e0' : '#333',
+                padding: 20,
+                usePointStyle: true,
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: { 
+              enabled: true,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            },
           },
-          scales: {
-            x: { grid: { display: false } },
-            y: { grid: { color: '#e0e0e0' }, beginAtZero: true },
-          },
+          maintainAspectRatio: false,
         },
       });
     },
@@ -90,6 +124,11 @@ export default {
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(60,80,120,0.08);
 }
+.dashboard--dark {
+  background: #23272b;
+  color: #e0e0e0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
 .dashboard__header {
   text-align: center;
   margin-bottom: 2em;
@@ -99,6 +138,10 @@ export default {
   font-weight: 700;
   color: #263238;
   letter-spacing: 1px;
+}
+.dashboard--dark .dashboard__header h1 {
+  color: #f5f7fa;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .dashboard__stats {
   display: flex;
@@ -125,12 +168,61 @@ export default {
   font-weight: bold;
   border: 2px solid #26a69a;
 }
+.dashboard--dark .dashboard__card {
+  background: #2c2f33;
+  color: #e0e0e0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.dashboard--dark .dashboard__card--total {
+  background: #2c2f33;
+  border: 2px solid #26a69a;
+}
 .dashboard__chart {
   margin-top: 2em;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(33,150,243,0.07);
   padding: 2em;
+  min-height: 400px;
+}
+.dashboard__chart--dark {
+  background: #2c2f33;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.dashboard__chart h2 {
+  color: #263238;
+  font-weight: 600;
+  margin-bottom: 1em;
+  font-size: 1.5em;
+}
+.dashboard__chart--dark h2 {
+  color: #f5f7fa;
+}
+.dashboard__btn--back {
+  background: #26a69a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5em 1.2em;
+  margin-bottom: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 500;
+}
+.dashboard__btn--back:hover {
+  background: #00897b;
+}
+.dashboard--dark .dashboard__btn--back {
+  background: #26a69a;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(38,166,154,0.3);
+}
+.dashboard--dark .dashboard__btn--back:hover {
+  background: #00897b;
+  box-shadow: 0 4px 16px rgba(38,166,154,0.4);
 }
 @media (max-width: 700px) {
   .dashboard {

@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.theme-dark {
+  background: #181a20;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__header,
+.theme-dark .ticket-list__modal-content,
+.theme-dark .ticket-list__table,
+.theme-dark .ticket-list__controls {
+  background: #232635;
+  color: #e0e0e0;
+}
+.theme-dark .ticket-list__btn {
+  background: #263238;
+  color: #fff;
+  border-color: #444;
+}
+.theme-dark .ticket-list__table th,
+.theme-dark .ticket-list__table td {
+  border-color: #444;
+}
+.theme-dark .ticket-list__modal {
+  background: rgba(24,26,32,0.85);
+}

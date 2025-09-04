@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use App\Services\TicketClassifier;
 
 class TicketController extends Controller
 {
@@ -41,7 +42,14 @@ class TicketController extends Controller
             $query->where('status', $request->input('status'));
         }
         if ($request->filled('category')) {
-            $query->where('category', $request->input('category'));
+            $category = $request->input('category');
+            if ($category === 'Uncategorized') {
+                $query->where(function($q) {
+                    $q->whereNull('category')->orWhere('category', '');
+                });
+            } else {
+                $query->where('category', $category);
+            }
         }
         $tickets = $query->orderByDesc('created_at')->paginate(10);
         return response()->json($tickets);
@@ -69,21 +77,45 @@ class TicketController extends Controller
     }
 
     // POST /tickets/{id}/classify
-    public function classify(string $id)
+    public function classify(string $id, TicketClassifier $classifier)
     {
-        \App\Jobs\ClassifyTicket::dispatch($id);
-        return response()->json(['message' => 'Classification job dispatched.']);
+        $ticket = Ticket::findOrFail($id);
+        $result = $classifier->classify($ticket->subject, $ticket->body);
+        if (!$ticket->category) {
+            $ticket->category = $result['category'];
+        }
+        $ticket->explanation = $result['explanation'];
+        $ticket->confidence = $result['confidence'];
+        $ticket->save();
+
+        return response()->json($ticket);
     }
+
 
     // GET /stats
     public function stats()
     {
-        $statusCounts = Ticket::selectRaw('status, COUNT(*) as count')->groupBy('status')->pluck('count', 'status');
-        $categoryCounts = Ticket::selectRaw('category, COUNT(*) as count')->groupBy('category')->pluck('count', 'category');
+        $statusCounts = Ticket::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')->pluck('count', 'status')->toArray();
+        
+        // Handle null/empty categories properly
+        $rawCategoryCounts = Ticket::selectRaw('category, COUNT(*) as count')
+            ->groupBy('category')->get();
+        
+        $categoryCounts = [];
+        foreach ($rawCategoryCounts as $row) {
+            $category = $row->category;
+            if (empty($category)) {
+                $category = 'Uncategorized';
+            }
+            $categoryCounts[$category] = $row->count;
+        }
+        
+        $total = Ticket::count();
         return response()->json([
             'status' => $statusCounts,
             'category' => $categoryCounts,
-            'total' => Ticket::count(),
+            'total' => $total,
         ]);
     }
 }
