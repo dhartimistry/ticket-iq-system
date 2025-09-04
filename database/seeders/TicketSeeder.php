@@ -9,6 +9,11 @@ class TicketSeeder extends Seeder
 {
     public function run(): void
     {
-        Ticket::factory()->count(25)->create();
+        // Force English locale for faker
+        app()->setLocale('en');
+        fake()->locale('en_US');
+        
+        // Create 35+ tickets using Factory + Faker (≥25 as required)
+        Ticket::factory()->count(35)->create();
     }
 }

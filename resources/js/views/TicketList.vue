@@ -3,12 +3,10 @@
     <header class="ticket-list__header">
       <h1 class="ticket-list__title">Tickets</h1>
       <div>
+        <button class="ticket-list__btn ticket-list__btn--dashboard" @click="$router.push('/dashboard')">📊 View Dashboard</button>
         <button class="ticket-list__btn ticket-list__btn--secondary" @click="showModal = true">+ New Ticket</button>
         <button class="ticket-list__btn ticket-list__btn--success" @click="exportCSV">Export CSV</button>
-        <button class="ticket-list__btn ticket-list__btn--primary ticket-list__theme-switch" @click="toggleTheme">
-          <span class="ticket-list__theme-switch__label">Mode</span>
-          <span class="ticket-list__theme-switch__slider" :class="{ 'ticket-list__theme-switch__slider--dark': darkTheme }"></span>
-        </button>
+        <ThemeToggle />
       </div>
     </header>
     <div v-if="showModal" class="ticket-list__modal">
@@ -94,28 +92,31 @@
       <button @click="nextPage" :disabled="!hasMore">Next</button>
     </div>
       </div>
-      
-      <div class="ticket-list__chart-container">
-        <div class="ticket-list__chart">
-          <h3>Tickets Analytics</h3>
-          <canvas id="categoryChart"></canvas>
-        </div>
-      </div>
     </div>
     <div v-if="showDetail" class="ticket-list__modal" :class="{ 'dark': darkTheme }">
       <div class="ticket-list__modal-content" :class="{ 'dark': darkTheme }">
-        <TicketDetail :id="selectedId" @close="closeDetail" :darkMode="darkTheme" />
+        <TicketDetail 
+          :id="selectedId" 
+          @close="closeDetail" 
+          @saved="fetchTickets"
+          :darkMode="darkTheme" 
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Chart from '../chart';
 import TicketDetail from './TicketDetail.vue';
+import ThemeToggle from '../components/ThemeToggle.vue';
+import { themeStore } from '../stores/themeStore';
+
 export default {
   name: 'TicketList',
-  components: { TicketDetail },
+  components: { 
+    TicketDetail,
+    ThemeToggle 
+  },
   data() {
     return {
       tickets: [],
@@ -133,12 +134,12 @@ export default {
       selectedId: null,
       subjectError: '',
       bodyError: '',
-      darkTheme: false,
-      categoryCounts: {},
-      chart: null,
-      fetchingStats: false,
-      renderingChart: false,
     };
+  },
+  computed: {
+    darkTheme() {
+      return themeStore.state.isDark
+    }
   },
   watch: {
     search: 'fetchTickets',
@@ -152,26 +153,11 @@ export default {
           this.renderChart();
         });
       }
-    },
-    categoryCounts: {
-      handler(newVal, oldVal) {
-        console.log('categoryCounts watcher triggered', { newVal, oldVal });
-        if (Object.keys(newVal).length > 0 && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-          this.$nextTick(() => {
-            setTimeout(() => {
-              console.log('Watcher rendering chart');
-              this.renderChart();
-            }, 200);
-          });
-        }
-      },
-      deep: true
     }
   },
   mounted() {
     console.log('TicketList component mounted');
     this.fetchTickets();
-    this.fetchStats();
   },
   methods: {
     async fetchTickets() {
@@ -260,6 +246,10 @@ export default {
       } else {
         document.documentElement.classList.remove('theme-dark');
       }
+      // Emit theme change event for other components
+      window.dispatchEvent(new CustomEvent('themeChange', { 
+        detail: { isDark: this.darkTheme }
+      }));
     },
     exportCSV() {
       const headers = ['Subject', 'Status', 'Category', 'Confidence', 'Note', 'Explanation'];
@@ -280,137 +270,6 @@ export default {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    },
-    async fetchStats() {
-      console.log('fetchStats called');
-      if (this.fetchingStats) {
-        console.log('Already fetching stats, skipping');
-        return;
-      }
-      
-      this.fetchingStats = true;
-      try {
-        const res = await fetch('/api/stats');
-        const data = await res.json();
-        console.log('Stats data received:', data);
-        this.categoryCounts = data.category || {};
-        console.log('Category counts set:', this.categoryCounts);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        this.fetchingStats = false;
-      }
-    },
-    renderChart() {
-      console.log('Rendering chart with categories:', this.categoryCounts);
-      
-      // Prevent rendering if already in progress
-      if (this.renderingChart) {
-        console.log('Chart render already in progress, skipping');
-        return;
-      }
-      
-      this.renderingChart = true;
-      
-      try {
-        // Destroy existing chart
-        if (this.chart) {
-          console.log('Destroying existing chart');
-          this.chart.destroy();
-          this.chart = null;
-        }
-        
-        // Get canvas element
-        const ctx = document.getElementById('categoryChart');
-        if (!ctx) {
-          console.error('Canvas element not found');
-          return;
-        }
-        
-        // Ensure we have data
-        const labels = Object.keys(this.categoryCounts);
-        const data = Object.values(this.categoryCounts);
-        
-        if (labels.length === 0) {
-          console.log('No data to render chart');
-          return;
-        }
-        
-        console.log('Chart data:', { labels, data });
-        
-        // Generate colors with specific color for Uncategorized
-        const defaultColors = ['#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#ec407a', '#26a69a', '#ff7043', '#8d6e63'];
-        const backgroundColor = labels.map((label, index) => {
-          return label === 'Uncategorized' ? '#ee9b00' : defaultColors[index % defaultColors.length];
-        });
-        
-        this.chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Tickets Analytics',
-              data: data,
-              backgroundColor: backgroundColor,
-              borderRadius: 6,
-              barPercentage: 0.6,
-            }],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: { enabled: true },
-            },
-            scales: {
-              x: { 
-                grid: { display: false },
-                ticks: { 
-                  color: this.darkTheme ? '#ffffff' : '#000000',
-                  font: {
-                    size: 12,
-                    weight: '500'
-                  }
-                }
-              },
-              y: { 
-                grid: { 
-                  color: this.darkTheme ? 'rgba(224, 224, 224, 0.2)' : 'rgba(224, 224, 224, 0.3)',
-                  lineWidth: 1
-                }, 
-                beginAtZero: true,
-                ticks: { 
-                  color: this.darkTheme ? '#ffffff' : '#000000',
-                  stepSize: 1,
-                  font: {
-                    size: 11,
-                    weight: '500'
-                  }
-                }
-              },
-            },
-          },
-        });
-        console.log('Chart created successfully:', this.chart);
-      } catch (error) {
-        console.error('Error creating chart:', error);
-      } finally {
-        this.renderingChart = false;
-      }
-    },
-    scrollToChart() {
-      this.$refs.chartSection.scrollIntoView({ behavior: 'smooth' });
-    },
-    debugChart() {
-      console.log('=== Chart Debug Info ===');
-      console.log('Category counts:', this.categoryCounts);
-      console.log('Canvas element:', document.getElementById('categoryChart'));
-      console.log('Chart instance:', this.chart);
-      console.log('Chart.js available:', typeof Chart);
-      
-      // Force re-fetch stats and render
-      this.fetchStats();
     }
   }
 };
@@ -482,6 +341,13 @@ export default {
 }
 .ticket-list__btn--success:hover {
   background: #1b5e20;
+}
+.ticket-list__btn--dashboard {
+  background: #118ab2;
+  color: #fff;
+}
+.ticket-list__btn--dashboard:hover {
+  background: #0d6efd;
 }
 .ticket-list__btn--info {
   background: #42a5f5;
@@ -603,6 +469,102 @@ export default {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(33,150,243,0.07);
   padding: 1.5em;
+}
+.ticket-list__navigation {
+  margin-bottom: 2em;
+  text-align: center;
+}
+.ticket-list__dashboard-btn {
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 1em 2em;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.ticket-list__dashboard-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(25, 118, 210, 0.4);
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+}
+
+/* Dark mode styles */
+.dark .ticket-list__dashboard-btn {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.4);
+}
+.dark .ticket-list__dashboard-btn:hover {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+  box-shadow: 0 6px 24px rgba(25, 118, 210, 0.6);
+}
+.ticket-list__stats-grid {
+  display: grid;
+  gap: 0.5em;
+}
+.ticket-list__stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4em 0.8em;
+  border-radius: 6px;
+  background: #f8f9fa;
+  border-left: 3px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+.ticket-list__stat-item--status {
+  border-left-color: #42a5f5;
+}
+.ticket-list__stat-item--category {
+  border-left-color: #66bb6a;
+}
+.ticket-list__stat-item:hover {
+  background: #f0f2f5;
+  transform: translateX(2px);
+}
+.ticket-list__stat-label {
+  font-weight: 500;
+  color: #37474f;
+  text-transform: capitalize;
+  font-size: 0.9em;
+}
+.ticket-list__stat-value {
+  font-weight: 700;
+  color: #1976d2;
+  font-size: 1em;
+  background: #e3f2fd;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+}
+.ticket-list__total {
+  margin-top: 1.5em;
+  padding: 1em;
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+.ticket-list__total-label {
+  font-weight: 600;
+  font-size: 1em;
+}
+.ticket-list__total-value {
+  font-weight: 700;
+  font-size: 1.4em;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.3em 0.8em;
+  border-radius: 6px;
 }
 .ticket-list__chart h3 {
   margin: 0 0 1em 0;
@@ -855,6 +817,14 @@ export default {
   background: #388e3c;
   color: #fff;
 }
+.theme-dark .ticket-list__btn--dashboard {
+  background: #118ab2;
+  color: #fff;
+}
+.theme-dark .ticket-list__btn--dashboard:hover {
+  background: #0d6efd;
+  color: #fff;
+}
 .theme-dark .ticket-list__modal-actions button[type="submit"] {
   background-color: #1a659e;
   color: #fff;
@@ -996,9 +966,85 @@ export default {
   .ticket-list__content {
     flex-direction: column;
   }
-  .ticket-list__chart-container {
+  .ticket-list__analytics {
+    flex-direction: column;
+    gap: 1em;
+  }
+  .ticket-list__chart-section,
+  .ticket-list__stats-section {
     flex: none;
     width: 100%;
   }
+  .ticket-list__stats-row {
+    grid-template-columns: 1fr;
+    gap: 1em;
+  }
+}
+@media (max-width: 768px) {
+  .ticket-list__analytics {
+    gap: 1em;
+  }
+  .ticket-list__chart-section,
+  .ticket-list__stats-section {
+    padding: 1em;
+  }
+  .ticket-list__stats-grid {
+    gap: 0.3em;
+  }
+  .ticket-list__stat-item {
+    padding: 0.3em 0.6em;
+    font-size: 0.9em;
+  }
+  .ticket-list__stat-value {
+    font-size: 0.9em;
+    padding: 0.1em 0.4em;
+    min-width: 24px;
+  }
+  .ticket-list__total {
+    padding: 0.8em;
+  }
+  .ticket-list__total-value {
+    font-size: 1.2em;
+    padding: 0.2em 0.6em;
+  }
+}
+
+/* Dark mode styles */
+.dark .ticket-list__chart-section {
+  background: #37474f;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.dark .ticket-list__chart-section h3 {
+  color: #eceff1;
+  border-bottom-color: #546e7a;
+}
+.dark .ticket-list__stats-section {
+  background: #37474f;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.dark .ticket-list__stats-group h3 {
+  color: #eceff1;
+  border-bottom-color: #546e7a;
+}
+.dark .ticket-list__stat-item {
+  background: #455a64;
+  border-left-color: #607d8b;
+}
+.dark .ticket-list__stat-item:hover {
+  background: #546e7a;
+}
+.dark .ticket-list__stat-label {
+  color: #cfd8dc;
+}
+.dark .ticket-list__stat-value {
+  background: #1e3a5f;
+  color: #90caf9;
+}
+.dark .ticket-list__total {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+}
+.dark .ticket-list__chart-loading,
+.dark .ticket-list__stats-loading {
+  color: #cfd8dc;
 }
 </style>

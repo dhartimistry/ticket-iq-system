@@ -12,81 +12,131 @@ use App\Services\TicketClassifier;
 
 class TicketController extends Controller
 {
-    // POST /tickets
+    /**
+     * Create a new ticket and queue it for AI classification.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
         ]);
+
         $ticket = Ticket::create([
             'subject' => $validated['subject'],
             'body' => $validated['body'],
             'status' => 'open',
         ]);
+        
+        // Queue for AI classification
+        \App\Jobs\ClassifyTicket::dispatch($ticket->id);
+        
         return response()->json($ticket, 201);
     }
 
-    // GET /tickets
+    /**
+     * List tickets with optional filtering and search.
+     * Supports filtering by status and category, and full-text search.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(Request $request)
     {
         $query = Ticket::query();
+
+        // Apply search filter
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
                 $q->where('subject', 'like', "%$search%")
-                  ->orWhere('body', 'like', "%$search%");
+                    ->orWhere('body', 'like', "%$search%");
             });
         }
+
+        // Apply status filter
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
+
+        // Apply category filter
         if ($request->filled('category')) {
             $category = $request->input('category');
             if ($category === 'Uncategorized') {
                 $query->where(function($q) {
-                    $q->whereNull('category')->orWhere('category', '');
+                    $q->whereNull('category')
+                        ->orWhere('category', '');
                 });
             } else {
                 $query->where('category', $category);
             }
         }
-        $tickets = $query->orderByDesc('created_at')->paginate(10);
+
+        $tickets = $query->orderByDesc('created_at')
+                        ->paginate(10);
+
         return response()->json($tickets);
     }
 
-    // GET /tickets/{id}
+    /**
+     * Get a specific ticket by ID.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
     public function show(string $id)
     {
         $ticket = Ticket::findOrFail($id);
         return response()->json($ticket);
     }
 
-    // PATCH /tickets/{id}
+    /**
+     * Update ticket properties.
+     * Allows updating status, category, and internal notes.
+     *
+     * @param Request $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
     public function update(Request $request, string $id)
     {
         $ticket = Ticket::findOrFail($id);
+        
         $validated = $request->validate([
             'status' => 'sometimes|in:open,pending,closed',
             'category' => 'sometimes|string|max:255',
             'note' => 'sometimes|nullable|string',
         ]);
-        $ticket->fill($validated);
-        $ticket->save();
+
+        $ticket->fill($validated)->save();
+        
         return response()->json($ticket);
     }
 
-    // POST /tickets/{id}/classify
+    /**
+     * Manually trigger AI classification for a ticket.
+     * Updates category, explanation, and confidence score.
+     *
+     * @param string $id
+     * @param TicketClassifier $classifier
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
     public function classify(string $id, TicketClassifier $classifier)
     {
         $ticket = Ticket::findOrFail($id);
         $result = $classifier->classify($ticket->subject, $ticket->body);
-        if (!$ticket->category) {
-            $ticket->category = $result['category'];
-        }
-        $ticket->explanation = $result['explanation'];
-        $ticket->confidence = $result['confidence'];
-        $ticket->save();
+        
+        $ticket->fill([
+            'category' => $result['category'],
+            'explanation' => $result['explanation'],
+            'confidence' => $result['confidence'],
+        ])->save();
 
         return response()->json($ticket);
     }

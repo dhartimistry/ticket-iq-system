@@ -154,7 +154,8 @@ export default {
         .then((data) => {
           this.ticket = data;
           this.error = "";
-          // Close the modal after successful save
+          // Emit saved event and close the modal
+          this.$emit('saved');
           this.$emit('close');
         })
         .catch((error) => {

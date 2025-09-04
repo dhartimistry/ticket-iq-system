@@ -18,25 +18,53 @@ class ClassifyTicket implements ShouldQueue
 
     public string $ticketId;
 
+    /**
+     * Number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
+    /**
+     * Create a new job instance.
+     */
     public function __construct(string $ticketId)
     {
         $this->ticketId = $ticketId;
     }
 
+    /**
+     * Execute the job.
+     * 
+     * This job classifies a ticket using AI or keyword-based classification.
+     * If the ticket was manually categorized, it preserves the category
+     * but updates the explanation and confidence.
+     */
     public function handle(TicketClassifier $classifier): void
     {
         $ticket = Ticket::find($this->ticketId);
-        if (!$ticket) return;
-        $result = $classifier->classify($ticket->subject, $ticket->body);
-        // If category was manually set, keep it, but update explanation/confidence
-        if ($ticket->isDirty('category')) {
-            $ticket->explanation = $result['explanation'];
-            $ticket->confidence = $result['confidence'];
-        } else {
-            $ticket->category = $result['category'];
-            $ticket->explanation = $result['explanation'];
-            $ticket->confidence = $result['confidence'];
+        if (!$ticket) {
+            // Ticket was deleted, no need to retry
+            $this->delete();
+            return;
         }
-        $ticket->save();
+        
+        // Preserve manual categorization
+        $hasManualCategory = !empty($ticket->category) && empty($ticket->explanation);
+        
+        try {
+            $result = $classifier->classify($ticket->subject, $ticket->body);
+            
+            $ticket->fill([
+                'category' => $hasManualCategory ? $ticket->category : $result['category'],
+                'explanation' => $result['explanation'],
+                'confidence' => $result['confidence']
+            ])->save();
+        } catch (\Exception $e) {
+            // Log error and allow retry
+            \Illuminate\Support\Facades\Log::error(
+                'Failed to classify ticket: ' . $e->getMessage(),
+                ['ticket_id' => $this->ticketId]
+            );
+            throw $e;
+        }
     }
 }

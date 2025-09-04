@@ -1,23 +1,74 @@
-# Laravel & Node
-/vendor/
-/node_modules/
+# Dependencies
+/node_modules
+/vendor
+
+# Environment files
 .env
-.env.*
-/storage/*.key
-/storage/app/*
-/storage/logs/*
-/storage/framework/*
-/bootstrap/cache/*
+.env.backup
+.env.production
+.phpunit.result.cache
+
+# Laravel specific
 /public/hot
 /public/storage
-/public/mix-manifest.json
 /public/build
-/database/*.sqlite
-/database/*.sqlite3
-.idea/
-*.swp
-*.swo
-.DS_Store
+/storage/*.key
+/storage/app/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+
+# Build files
+/public/mix-manifest.json
+/public/css
+/public/js
 npm-debug.log
 yarn-error.log
-composer.lock
+yarn.lock
+package-lock.json
+
+# IDE & Editor files
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+/coverage
+.phpunit.cache
+.phpunit.result.cache
+
+# Database
+/database/*.sqlite*
+/database/backups
+
+# Keep these directories but ignore their contents
+/storage/app/public/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/logs/
+
+# But keep these files
+!.gitkeep
+!public/.htaccess
+!storage/app/public/.gitkeep
+!storage/framework/cache/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/views/.gitkeep
+!storage/logs/.gitkeep
